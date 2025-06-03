@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DiffMate - 텍스트 비교 도구 | 두 문서의 차이점 찾기</title>
+    <meta
+      name="description"
+      content="DiffMate에서 두 텍스트 또는 문서의 차이점을 쉽고 빠르게 비교하세요. 코드, 계약서, 일반 텍스트 모두 지원합니다."
+    />
+    <meta
+      name="keywords"
+      content="텍스트 비교, 문서 비교, 코드 비교, 두 파일 차이점, 문서 대조, 버전 관리, 계약서 비교, diff tool"
+    />
+    <link rel="canonical" href="https://diffmate.netlify.app/" />
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <style>
+      :root {
+        --primary-color: #4caf50; /* Green */
+        --secondary-color: #2196f3; /* Blue */
+        --accent-color: #ffc107; /* Amber */
+        --deleted-color: #f44336; /* Red */
+        --added-color: #4caf50; /* Green */
+        --modified-color: #2196f3; /* Blue */
+        --background-color: #f8f9fa;
+        --text-color: #333;
+        --border-color: #ddd;
+        --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        box-shadow: var(--box-shadow);
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 2.2rem;
+        letter-spacing: 1px;
+      }
+
+      main {
+        flex-grow: 1;
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 2rem auto;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: var(--box-shadow);
+      }
+
+      .input-section {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .input-section textarea {
+        flex: 1;
+        min-width: 300px;
+        height: 250px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        font-size: 1rem;
+        resize: vertical;
+        font-family: "Consolas", "Monaco", monospace; /* For code readability */
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .controls button {
+        background-color: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.8rem;
+        border-radius: 5px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .controls button:hover {
+        background-color: #1976d2; /* Darker blue */
+      }
+
+      .controls label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+      }
+
+      .controls input[type="checkbox"] {
+        transform: scale(1.2);
+        cursor: pointer;
+      }
+
+      .result-section {
+        margin-top: 2rem;
+      }
+
+      .result-section h2 {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+      }
+
+      .diff-output {
+        background-color: #fafafa;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 1rem;
+        min-height: 200px;
+        font-family: "Consolas", "Monaco", monospace;
+        white-space: pre-wrap; /* Preserves whitespace and wraps lines */
+        word-break: break-all; /* Breaks words if necessary to fit */
+        overflow-x: auto; /* Allows horizontal scrolling for long lines */
+        font-size: 0.95rem;
+      }
+
+      .diff-output .added {
+        background-color: rgba(76, 175, 80, 0.2); /* Light green */
+        color: var(--added-color);
+        border-radius: 3px;
+        padding: 2px 4px;
+      }
+
+      .diff-output .deleted {
+        background-color: rgba(244, 67, 54, 0.2); /* Light red */
+        color: var(--deleted-color);
+        text-decoration: line-through;
+        border-radius: 3px;
+        padding: 2px 4px;
+      }
+
+      .diff-output .modified {
+        background-color: rgba(33, 150, 243, 0.2); /* Light blue */
+        color: var(--modified-color);
+        border-radius: 3px;
+        padding: 2px 4px;
+      }
+
+      footer {
+        text-align: center;
+        padding: 1.5rem;
+        margin-top: 3rem;
+        background-color: var(--primary-color);
+        color: white;
+        font-size: 0.9rem;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .input-section {
+          flex-direction: column;
+        }
+        .input-section textarea {
+          width: 100%;
+        }
+        main {
+          margin: 1rem;
+          padding: 1.5rem;
+        }
+        header h1 {
+          font-size: 1.8rem;
+        }
+        .controls {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>DiffMate</h1>
+      <p>두 텍스트의 차이점을 쉽고 빠르게 비교하세요.</p>
+    </header>
+
+    <main>
+      <section class="input-section">
+        <textarea
+          id="text1"
+          placeholder="첫 번째 텍스트를 여기에 입력하세요."
+        ></textarea>
+        <textarea
+          id="text2"
+          placeholder="두 번째 텍스트를 여기에 입력하세요."
+        ></textarea>
+      </section>
+
+      <section class="controls">
+        <button id="compareButton">텍스트 비교하기</button>
+        <label>
+          <input type="checkbox" id="ignoreWhitespace" /> 공백 무시
+        </label>
+        <label> <input type="checkbox" id="ignoreCase" /> 대소문자 무시 </label>
+        <label> <input type="checkbox" id="ignoreNumbers" /> 숫자 무시 </label>
+      </section>
+
+      <section class="result-section">
+        <h2>비교 결과</h2>
+        <div id="diffOutput" class="diff-output"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 DiffMate. All rights reserved.</p>
+      <p>궁금한 점이 있으시면 언제든지 문의해주세요.</p>
+    </footer>
+
+    <script>
+      const text1El = document.getElementById("text1");
+      const text2El = document.getElementById("text2");
+      const compareButton = document.getElementById("compareButton");
+      const diffOutputEl = document.getElementById("diffOutput");
+      const ignoreWhitespaceCheckbox =
+        document.getElementById("ignoreWhitespace");
+      const ignoreCaseCheckbox = document.getElementById("ignoreCase");
+      const ignoreNumbersCheckbox = document.getElementById("ignoreNumbers");
+
+      // --- 로컬 스토리지 관련 기능 ---
+      const LOCAL_STORAGE_KEY_TEXT1 = "diffmate_text1";
+      const LOCAL_STORAGE_KEY_TEXT2 = "diffmate_text2";
+      const LOCAL_STORAGE_KEY_OPTIONS = "diffmate_options";
+
+      function saveState() {
+        localStorage.setItem(LOCAL_STORAGE_KEY_TEXT1, text1El.value);
+        localStorage.setItem(LOCAL_STORAGE_KEY_TEXT2, text2El.value);
+        const options = {
+          ignoreWhitespace: ignoreWhitespaceCheckbox.checked,
+          ignoreCase: ignoreCaseCheckbox.checked,
+          ignoreNumbers: ignoreNumbersCheckbox.checked,
+        };
+        localStorage.setItem(
+          LOCAL_STORAGE_KEY_OPTIONS,
+          JSON.stringify(options)
+        );
+      }
+
+      function loadState() {
+        text1El.value = localStorage.getItem(LOCAL_STORAGE_KEY_TEXT1) || "";
+        text2El.value = localStorage.getItem(LOCAL_STORAGE_KEY_TEXT2) || "";
+        const savedOptions = JSON.parse(
+          localStorage.getItem(LOCAL_STORAGE_KEY_OPTIONS)
+        );
+        if (savedOptions) {
+          ignoreWhitespaceCheckbox.checked =
+            savedOptions.ignoreWhitespace || false;
+          ignoreCaseCheckbox.checked = savedOptions.ignoreCase || false;
+          ignoreNumbersCheckbox.checked = savedOptions.ignoreNumbers || false;
+        }
+      }
+
+      // 텍스트 입력 시마다 상태 저장
+      text1El.addEventListener("input", saveState);
+      text2El.addEventListener("input", saveState);
+      ignoreWhitespaceCheckbox.addEventListener("change", saveState);
+      ignoreCaseCheckbox.addEventListener("change", saveState);
+      ignoreNumbersCheckbox.addEventListener("change", saveState);
+
+      // 페이지 로드 시 상태 복원
+      document.addEventListener("DOMContentLoaded", loadState);
+
+      // --- 텍스트 비교 로직 (매우 간소화된 버전) ---
+      function compareTexts() {
+        let text1 = text1El.value;
+        let text2 = text2El.value;
+        let outputHtml = "";
+
+        const ignoreWhitespace = ignoreWhitespaceCheckbox.checked;
+        const ignoreCase = ignoreCaseCheckbox.checked;
+        const ignoreNumbers = ignoreNumbersCheckbox.checked;
+
+        if (ignoreWhitespace) {
+          text1 = text1.replace(/\s+/g, "");
+          text2 = text2.replace(/\s+/g, "");
+        }
+        if (ignoreCase) {
+          text1 = text1.toLowerCase();
+          text2 = text2.toLowerCase();
+        }
+        if (ignoreNumbers) {
+          text1 = text1.replace(/\d/g, "");
+          text2 = text2.replace(/\d/g, "");
+        }
+
+        const lines1 = text1.split("\n");
+        const lines2 = text2.split("\n");
+
+        const maxLength = Math.max(lines1.length, lines2.length);
+
+        for (let i = 0; i < maxLength; i++) {
+          const line1 = lines1[i] !== undefined ? lines1[i] : "";
+          const line2 = lines2[i] !== undefined ? lines2[i] : "";
+
+          if (line1 === line2) {
+            outputHtml += `<div>${escapeHtml(line1)}</div>`;
+          } else {
+            if (line1 === "") {
+              outputHtml += `<div><span class="added">+ ${escapeHtml(
+                line2
+              )}</span></div>`;
+            } else if (line2 === "") {
+              outputHtml += `<div><span class="deleted">- ${escapeHtml(
+                line1
+              )}</span></div>`;
+            } else {
+              // Simple word-level diff for modified lines (very basic)
+              const words1 = line1.split(/\b/); // Split by word boundaries
+              const words2 = line2.split(/\b/);
+
+              let modifiedLineHtml = "";
+              let p1 = 0,
+                p2 = 0;
+              while (p1 < words1.length || p2 < words2.length) {
+                if (words1[p1] === words2[p2]) {
+                  modifiedLineHtml += escapeHtml(words1[p1]);
+                  p1++;
+                  p2++;
+                } else {
+                  // Find differing part and mark
+                  let diffPart1 = "";
+                  while (p1 < words1.length && words1[p1] !== words2[p2]) {
+                    diffPart1 += words1[p1];
+                    p1++;
+                  }
+                  let diffPart2 = "";
+                  while (p2 < words2.length && words1[p1] !== words2[p2]) {
+                    diffPart2 += words2[p2];
+                    p2++;
+                  }
+
+                  if (diffPart1 && diffPart2) {
+                    modifiedLineHtml += `<span class="deleted">${escapeHtml(
+                      diffPart1
+                    )}</span><span class="added">${escapeHtml(
+                      diffPart2
+                    )}</span>`;
+                  } else if (diffPart1) {
+                    modifiedLineHtml += `<span class="deleted">${escapeHtml(
+                      diffPart1
+                    )}</span>`;
+                  } else if (diffPart2) {
+                    modifiedLineHtml += `<span class="added">${escapeHtml(
+                      diffPart2
+                    )}</span>`;
+                  }
+                }
+              }
+              outputHtml += `<div><span class="modified">${modifiedLineHtml}</span></div>`;
+            }
+          }
+        }
+
+        if (outputHtml === "") {
+          outputHtml =
+            '<p style="text-align: center; color: #555;">두 텍스트가 일치합니다.</p>';
+        }
+
+        diffOutputEl.innerHTML = outputHtml;
+      }
+
+      // HTML Escape Function (보안을 위해 필수)
+      function escapeHtml(text) {
+        const map = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        };
+        return text.replace(/[&<>"']/g, function (m) {
+          return map[m];
+        });
+      }
+
+      compareButton.addEventListener("click", compareTexts);
+
+      // 초기 로드 시 비교 실행 (저장된 텍스트가 있다면)
+      if (text1El.value || text2El.value) {
+        compareTexts();
+      }
+    </script>
+  </body>
+</html>
